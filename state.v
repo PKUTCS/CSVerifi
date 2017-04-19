@@ -99,6 +99,13 @@ Definition h_updateB (h: heapB) (l: nat) (n: nat) : heapB :=
   fun l' => if beq_nat l l' then Some n else h l'.
 
 
+(* heap remove *)
+Definition h_removeV (h:heapV) (l:nat) : heapV :=
+fun x => if eq_nat_dec x l then None else h x.
+
+Definition h_removeB (h:heapB) (l:nat) : heapB :=
+fun x => if eq_nat_dec x l then None else h x.
+
 
 Definition state : Type := (storeV * storeB * storeF * heapV * heapB).
 

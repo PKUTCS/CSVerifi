@@ -35,17 +35,46 @@ match bk with
 end.
 
 
-Fixpoint beval stoV stoB stoF (b:bexp) : bool :=
+Compute (match 5,6 with
+         | 2,3 => 1
+         | 5,6 => 2
+         | _,_ => 3
+         end).
+
+Fixpoint beval stoV stoB stoF (b:bexp) : option bool :=
 match b with
-| BTrue => true
-| BFalse => false
-| BEq a1 a2 => beq_nat (aeval stoV stoF a1) (aeval stoV stoF a2)
-| BLe a1 a2 => leb (aeval stoV stoF a1) (aeval stoV stoF a2)
-| BNot b1 => negb (beval stov stoB stoF b1)
-| BAnd b1 b2 => andb (beval stov stoB stoF b1) (beval stov stoB stoF b2)
-| BOr  b1 b2 => orb (beval stov stoB stoF b1) (beval stov stoB stoF b2)
-| BKeq bk1 bk2 => beq_nat () ()
-| BKle bk1 bk2 => leb () ()
+| BTrue   => Some true
+| BFalse  => Some false
+| BEq a1 a2 => Some (beq_nat (aeval stoV stoF a1) (aeval stoV stoF a2))
+| BLe a1 a2 => Some (leb (aeval stoV stoF a1) (aeval stoV stoF a2))
+| BNot b1   =>(match (beval stoV stoB stoF b1) with
+               | None => None
+               | Some x => Some (negb x)
+               end)
+| BAnd b1 b2  =>(match (beval stoV stoB stoF b1), (beval stoV stoB stoF b2) with
+                 | None,_ => None
+                 | _,None => None
+                 | Some x1,Some x2 => Some (andb x1 x2)
+                 end)
+| BOr  b1 b2  =>(match (beval stoV stoB stoF b1), (beval stoV stoB stoF b2) with
+                 | None,_ => None
+                 | _,None => None
+                 | Some x1, Some x2 => Some (orb x1 x2)
+                 end)
+| BKeq bk1 bk2  =>(match (bkeval stoV stoB stoF bk1),
+                         (bkeval stoV stoB stoF bk2) 
+                   with
+                   | None,_ => None
+                   | _,None => None
+                   | Some a1, Some a2 => (Some (beq_nat a1 a2))
+                   end)
+| BKle bk1 bk2  => (match (bkeval stoV stoB stoF bk1),
+                          (bkeval stoV stoB stoF bk2) 
+                   with
+                   | None,_ => None
+                   | _,None => None
+                   | Some a1, Some a2 => (Some (leb a1 a2))
+                   end)
 end.
 
 
@@ -54,7 +83,7 @@ Inductive big_step: command -> state -> ext_state -> Prop :=
 | E_Skip  : forall stat,
               big_step CSkip stat (St stat)
 | E_Ass   : forall stoV stoB stoF hV hB x a n, (aeval stoV stoF a) = n ->
-              big_step (CAss x a) (stoV,stoB,stoF,hV,hB) 
+              big_step (CAss x a) (stoV,stoB,stoF,hV,hB)
                        (St ((st_updateV stoV x n),stoB,stoF,hV,hB))
 | E_Seq   : forall c1 c2 st0 st1 opst,
               big_step c1 st0 (St st1) ->
@@ -63,61 +92,79 @@ Inductive big_step: command -> state -> ext_state -> Prop :=
 | E_Seq_Ab: forall c1 c2 st0,
               big_step c1 st0 Abt ->
               big_step (CSeq c1 c2) st0 Abt
+| E_IfTure: forall stoV stoB stoF hV hB opst b c1 c2,
+              beval stoV stoB stoF b = Some true ->
+              big_step c1 (stoV,stoB,stoF,hV,hB) opst ->
+              big_step (CIf b c1 c2) (stoV,stoB,stoF,hV,hB) opst
+| E_IfFalse: forall stoV stoB stoF hV hB opst b c1 c2,
+              beval stoV stoB stoF b = Some false ->
+              big_step c2 (stoV,stoB,stoF,hV,hB) opst ->
+              big_step (CIf b c1 c2) (stoV,stoB,stoF,hV,hB) opst
+| E_If_Ab : forall stoV stoB stoF hV hB b c1 c2,
+              beval stoV stoB stoF b = None ->
+              big_step (CIf b c1 c2) (stoV,stoB,stoF,hV,hB) Abt
 
-/////
-| E_IfTure: forall sto h opst b c1 c2,
-              beval sto b = true ->
-              big_step c1 (sto,h) opst ->
-              big_step (CIf b c1 c2) (sto,h) opst
-| E_IfFalse:forall b sto c1 c2 h opst,
-              beval sto b = false ->
-              big_step c2 (sto,h) opst ->
-              big_step (CIf b c1 c2) (sto,h) opst
-| E_WhileEnd : forall b sto h c,
-                 beval sto b = false ->
-                 big_step (CWhile b c) (sto, h) (St (sto, h))
-| E_WhileLoop : forall sto h opst b c st,
-                  beval sto b = true ->
-                  big_step c (sto, h) (St st) ->
+
+| E_WhileEnd : forall b stoV stoB stoF hV hB c,
+                 beval stoV stoB stoF b = Some false ->
+                 big_step (CWhile b c) (stoV,stoB,stoF,hV,hB) (St (stoV,stoB,stoF,hV,hB))
+
+| E_WhileLoop : forall stoV stoB stoF hV hB opst b c st,
+                  beval stoV stoB stoF b = Some true ->
+                  big_step c (stoV,stoB,stoF,hV,hB) (St st) ->
                   big_step (CWhile b c) st opst ->
-                  big_step (CWhile b c) (sto, h) opst
-| E_WhileLoop_Ab : forall sto h b c,
-                  beval sto b = true ->
-                  big_step c (sto, h) Abt ->
-                  big_step (CWhile b c) (sto, h) Abt
-| E_Cons : forall sto h a n x l,
-              aeval sto a = n ->
-              h l = None ->
-              big_step (CCons x a) (sto, h)
-                       (St (st_update sto x l,
-                            h_update h l n))
-| E_Lookup : forall sto h x a1 n1 n2,
-                aeval sto a1 = n1 ->
-                h n1 = Some n2 ->
-                big_step (CLookup x a1) (sto, h) (St (st_update sto x n2, h))
-| E_Lookup_Ab : forall sto a1 n1 h x,
-                   aeval sto a1 = n1 ->
-                   h n1 = None ->
-                   big_step (CLookup x a1) (sto, h) Abt
-| E_Mutat : forall sto h a1 a2 n1 n2,
-                  aeval sto a1 = n1 ->
-                  aeval sto a2 = n2 ->
-                  in_dom n1 h ->
-                  big_step (CMutat a1 a2) (sto, h) (St (sto, h_update h n1 n2))
-| E_Mutat_Ab : forall sto h a1 a2 n1,
-                     aeval sto a1 = n1 ->
-                     h n1 = None ->
-                     big_step (CMutat a1 a2) (sto, h) Abt
-| E_Dispose : forall sto h a1 n1,
-                 aeval sto a1 = n1 ->
-                 in_dom n1 h ->
+                  big_step (CWhile b c) (stoV,stoB,stoF,hV,hB) opst
+| E_WhileLoop_Ab : forall stoV stoB stoF hV hB b c,
+                  beval stoV stoB stoF b = Some true ->
+                  big_step c (stoV,stoB,stoF,hV,hB) Abt ->
+                  big_step (CWhile b c) (stoV,stoB,stoF,hV,hB) Abt
+| E_While_Ab :  forall stoV stoB stoF hV hB b c,
+                  beval stoV stoB stoF b = None ->
+                  big_step (CWhile b c) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Cons : forall stoV stoB stoF hV hB a n x l,
+              aeval stoV stoF a = n ->
+              hV l = None ->
+              big_step (CCons x a) (stoV,stoB,stoF,hV,hB)
+                       (St ((st_updateV stoV x l),stoB,stoF,
+                            (h_updateV hV l n), hB))
+
+| E_Lookup : forall stoV stoB stoF hV hB x a1 l n,
+                aeval stoV stoF a1 = l ->
+                hV l = Some n ->
+                big_step (CLookup x a1) (stoV,stoB,stoF,hV,hB) 
+                         (St ((st_updateV stoV x n),stoB,stoF,hV,hB))
+
+| E_Lookup_Ab : forall stoV stoB stoF hV hB x a1 l,
+                   aeval stoV stoF a1 = l ->
+                   hV l = None ->
+                   big_step (CLookup x a1) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Mutat : forall stoV stoB stoF hV hB a1 a2 n1 n2,
+                  aeval stoV stoF a1 = n1 ->
+                  aeval stoV stoF a2 = n2 ->
+                  in_domV n1 hV ->
+                  big_step (CMutat a1 a2) (stoV,stoB,stoF,hV,hB) 
+                           (St (stoV,stoB,stoF,(h_updateV hV n1 n2),hB))
+
+| E_Mutat_Ab : forall stoV stoB stoF hV hB a1 a2 n1,
+                     aeval stoV stoF a1 = n1 ->
+                     hV n1 = None ->
+                     big_step (CMutat a1 a2) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Dispose : forall stoV stoB stoF hV hB a1 n1,
+                 aeval stoV stoF a1 = n1 ->
+                 in_domV n1 hV ->
                  big_step
-                   (CDispose a1) (sto, h)
-                   (St (sto, fun x => if eq_nat_dec x n1 then None else h x))
-| E_Dispose_Ab : forall sto h a1 n1,
-                    aeval sto a1 = n1 ->
-                    h n1 = None ->
-                    big_step (CDispose a1) (sto, h) Abt.
+                   (CDispose a1) (stoV,stoB,stoF,hV,hB)
+                   (St (stoV,stoB,stoF,(h_removeV hV n1),hB))
+
+| E_Dispose_Ab : forall stoV stoB stoF hV hB a1 n1,
+                    aeval stoV stoF a1 = n1 ->
+                    hV n1 = None ->
+                    big_step (CDispose a1) (stoV,stoB,stoF,hV,hB) Abt.
+
+
 
 Notation "c1 '/' st '\\' opst" := (big_step c1 st opst) 
                                   (at level 40, st at level 39).
