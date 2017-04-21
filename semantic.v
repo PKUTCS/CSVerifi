@@ -78,6 +78,41 @@ match b with
 end.
 
 
+(* auxiliary function *)
+Definition beq_op_nat x y : bool :=
+match x,y with
+| None,None => true
+| Some n1,Some n2 => beq_nat n1 n2
+| _,_ => false
+end.
+
+Fixpoint in_list (li:list (option nat)) (x:option nat) : bool :=
+match li with
+| [] => false
+| t::xli => if beq_op_nat t x then true else in_list xli x
+end.
+
+Definition get_content (nli:list (option nat)) : list nat :=
+let f := fun t => match t with
+                 | Some n => n
+                 | None => 0
+                 end
+in (map f nli).
+
+Fixpoint all_none (opli:list (option nat)) : bool :=
+match opli with
+| [] => true
+| x::li => if beq_op_nat x None then all_none li
+           else false
+end.
+
+Fixpoint h_unionB_many hB locli nli : heapB :=
+match locli,nli with
+| loc::locs,n::ns => h_unionB_many (h_updateB hB loc n) locs ns
+| [],[] => hB
+| _,_ => hB
+end.
+
 
 Inductive big_step: command -> state -> ext_state -> Prop :=
 | E_Skip  : forall stat,
@@ -162,8 +197,25 @@ Inductive big_step: command -> state -> ext_state -> Prop :=
 | E_Dispose_Ab : forall stoV stoB stoF hV hB a1 n1,
                     aeval stoV stoF a1 = n1 ->
                     hV n1 = None ->
-                    big_step (CDispose a1) (stoV,stoB,stoF,hV,hB) Abt.
+                    big_step (CDispose a1) (stoV,stoB,stoF,hV,hB) Abt
 
+| E_Fcreate : forall stoV stoB stoF hV hB f bkli nli nlist locli xli,
+                 nli = map (bkeval stoV stoB stoF) bkli ->
+                 in_list nli None = false ->
+                 get_content nli = nlist ->
+                 length locli = length nli ->
+                 map hB locli = xli ->
+                 all_none xli = true ->
+                 big_step (CFcreate f bkli) (stoV,stoB,stoF,hV,hB)
+                          (St (stoV,stoB,(st_updateF stoF f locli),hV,
+                              (h_unionB_many hB locli nlist)))
+| E_Fcreate_Abt : forall stoV stoB stoF hV hB f bkli nli,
+                    nli = map (bkeval stoV stoB stoF) bkli ->
+                    in_list nli None = true ->
+                    big_step (CFcreate f bkli) (stoV,stoB,stoF,hV,hB) Abt.
+
+| E_FcontentAppend : 
+| E_FcontentAppend_Abt : 
 
 
 Notation "c1 '/' st '\\' opst" := (big_step c1 st opst) 

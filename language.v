@@ -43,7 +43,7 @@ Inductive command: Type :=
 | CDispose: aexp -> command
 | CFcreate : id -> list bkexp -> command
 | CFcontentAppend: id -> list bkexp -> command
-| CFAddressAppend: id -> id -> list bkexp -> command
+| CFaddressAppend: id -> id -> list bkexp -> command
 | CFdelete : id -> command
 | CBlookup: id -> bkexp -> command
 | CBass   : id -> bkexp -> command
