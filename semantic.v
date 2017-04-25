@@ -114,6 +114,15 @@ match locli,nli with
 end.
 
 
+
+
+
+
+
+
+
+
+
 Inductive big_step: command -> state -> ext_state -> Prop :=
 | E_Skip  : forall stat,
               big_step CSkip stat (St stat)
@@ -212,11 +221,88 @@ Inductive big_step: command -> state -> ext_state -> Prop :=
 | E_Fcreate_Abt : forall stoV stoB stoF hV hB f bkli nli,
                     nli = map (bkeval stoV stoB stoF) bkli ->
                     in_list nli None = true ->
-                    big_step (CFcreate f bkli) (stoV,stoB,stoF,hV,hB) Abt.
+                    big_step (CFcreate f bkli) (stoV,stoB,stoF,hV,hB) Abt
 
-| E_FcontentAppend : 
-| E_FcontentAppend_Abt : 
+| E_FcontentAppend : forall stoV stoB stoF hV hB f bkli nli nlist ff xli locli,
+                        nli = map (bkeval stoV stoB stoF) bkli ->
+                        in_list nli None = false ->
+                        get_content nli = nlist ->
+                        length locli = length nli ->
+                        map hB locli = xli ->
+                        all_none xli = true ->
+                        ff = stoF f ->
+                        big_step (CFcontentAppend f bkli) (stoV,stoB,stoF,hV,hB)
+                                 (St (stoV,stoB,
+                                     (st_updateF stoF f (ff ++ locli)),hV,
+                                     (h_unionB_many hB locli nlist)))
 
+| E_FcontentAppend_Abt : forall stoV stoB stoF hV hB f bkli nli,
+                          nli = map (bkeval stoV stoB stoF) bkli ->
+                          in_list nli None = true ->
+                          big_step (CFcontentAppend f bkli) 
+                                   (stoV,stoB,stoF,hV,hB) Abt
+
+| E_FaddressAppend : forall stoV stoB stoF hV hB f1 f2 bkli nli nlist ff2,
+                        nli = map (bkeval stoV stoB stoF) bkli ->
+                        in_list nli None = false ->
+                        get_content nli = nlist ->
+                        ff2 = stoF f2 ->
+                        big_step (CFaddressAppend f1 f2 bkli) (stoV,stoB,stoF,hV,hB)
+                                 (St (stoV,stoB,
+                                     (st_updateF stoF f1 (ff2 ++ nlist)),hV,hB))
+
+| E_FaddressAppend_Abt : forall stoV stoB stoF hV hB f1 f2 bkli nli,
+                          nli = map (bkeval stoV stoB stoF) bkli ->
+                          in_list nli None = true ->
+                          big_step (CFaddressAppend f1 f2 bkli) 
+                                   (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Fdelete : forall stoV stoB stoF hV hB f,
+                big_step (CFdelete f) (stoV,stoB,stoF,hV,hB)
+                         (St (stoV,stoB,stoF,hV,hB))
+
+| E_Blookup : forall stoV stoB stoF hV hB b bk n v,
+                (bkeval stoV stoB stoF bk) = Some n->
+                hB n = Some v ->
+                big_step (CBlookup b bk) (stoV,stoB,stoF,hV,hB)
+                         (St (stoV,(st_updateB stoB b v),stoF,hV,hB))
+
+| E_Blookup_AbtBK : forall stoV stoB stoF hV hB b bk,
+                      (bkeval stoV stoB stoF bk) = None ->
+                      big_step (CBlookup b bk) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Blookup_AbtHp : forall stoV stoB stoF hV hB b bk n,
+                      (bkeval stoV stoB stoF bk) = Some n ->
+                      hB n = None ->
+                      big_step (CBlookup b bk) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Bass : forall stoV stoB stoF hV hB b bk n,
+              (bkeval stoV stoB stoF bk) = Some n ->
+              big_step (CBlookup b bk) (stoV,stoB,stoF,hV,hB)
+                       (St (stoV,(st_updateB stoB b n),stoF,hV,hB))
+
+| E_Bass_Abt : forall stoV stoB stoF hV hB b bk,
+                (bkeval stoV stoB stoF bk) = None ->
+                big_step (CBlookup b bk) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Bmutat : forall stoV stoB stoF hV hB bk1 bk2 n1 n2,
+                (bkeval stoV stoB stoF bk1) = Some n1 ->
+                (bkeval stoV stoB stoF bk2) = Some n2 ->
+                big_step (CBmutat bk1 bk2) (stoV,stoB,stoF,hV,hB)
+                         (St (stoV,stoB,stoF,hV,(h_updateB hB n1 n2)))
+
+| E_Bmutat_AbtBk1 : forall stoV stoB stoF hV hB bk1 bk2,
+                      (bkeval stoV stoB stoF bk1) = None ->
+                      big_step (CBmutat bk1 bk2) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Bmutat_AbtBk2 : forall stoV stoB stoF hV hB bk1 bk2 n1,
+                      (bkeval stoV stoB stoF bk1) = Some n1 ->
+                      (bkeval stoV stoB stoF bk2) = None ->
+                      big_step (CBmutat bk1 bk2) (stoV,stoB,stoF,hV,hB) Abt
+
+| E_Bdelete : forall stoV stoB stoF hV hB bk,
+                big_step (CBdelete bk) (stoV,stoB,stoF,hV,hB)
+                         (St (stoV,stoB,stoF,hV,hB)).
 
 Notation "c1 '/' st '\\' opst" := (big_step c1 st opst) 
                                   (at level 40, st at level 39).

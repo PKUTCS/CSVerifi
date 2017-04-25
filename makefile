@@ -3,3 +3,4 @@ make:
 	coqc state.v
 	coqc language.v
 	coqc semantic.v
+	coqc assertionV.v
