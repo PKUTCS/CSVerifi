@@ -35,12 +35,6 @@ match bk with
 end.
 
 
-Compute (match 5,6 with
-         | 2,3 => 1
-         | 5,6 => 2
-         | _,_ => 3
-         end).
-
 Fixpoint beval stoV stoB stoF (b:bexp) : option bool :=
 match b with
 | BTrue   => Some true
