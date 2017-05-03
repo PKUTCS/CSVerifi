@@ -61,6 +61,18 @@ Proof.
   intros. rewrite H in H0. inversion H0.
 Qed.
 
+Definition reverse bkli : list bkexp :=
+match bkli with
+| [] => []
+| x::xl => xl ++ [x]
+end.
+
+Fixpoint bkli_to_fe (bkli:list bkexp) : fe:=
+match bkli with
+| [] => Nil
+| x::xl => Appbk (bkli_to_fe xl) x
+end.
+
 
 Inductive triple: assertionG -> command -> assertionG -> Prop :=
 | rule_asgn : forall Q X a,
@@ -132,16 +144,31 @@ Inductive triple: assertionG -> command -> assertionG -> Prop :=
                (CDispose a)
                P
 
-| rule_Fcreate : forall x bkli,
-      triple ()
+| rule_Fcreate : forall x bkli P,
+      triple ([[P & empB]])
              (CFcreate x bkli)
-             ()
+             ([[P & (point_toF x (bkli_to_fe (reverse bkli)))]])
+
+| rule_FcontentAppend : 
 .
 
 Notation "{{ P }} c {{ Q }}" :=
   (triple P c Q) (at level 90, c at next level).
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+(*
 Definition triple (P:assertionG) (c:command) (Q:assertionG) : Prop :=
   forall st opst, 
     P st ->
@@ -345,3 +372,5 @@ Proof.
     +assumption. +split. *assumption.
      *apply bexp_eval_true. simpl. assumption.
 Qed.
+
+*)
