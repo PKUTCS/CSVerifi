@@ -21,10 +21,12 @@ Definition pairG (assV: assertionV) (assB: assertionB) : assertionG :=
     fun st:state => 
         (assV st) /\ (assB st).
 
+Notation " '[[' p '&' q ']]' " := 
+  (pairG p q) (at level 75).
 
 
-Definition empG : assertionG :=
-    pairG empV empB.
+
+Definition empG : assertionG := [[ empV & empB ]].
 
 Definition s_conjG (p q: assertionG) : assertionG :=
   fun (s: state) => p s /\ q s.
@@ -39,9 +41,9 @@ Definition s_impG (p q: assertionG) : assertionG :=
 Notation "p '--G>' q" := (s_impG p q) (at level 85).
 
 
-Definition strongerThanB (p q: assertionB) : Prop :=
-  forall s: state, s_impB p q s.
-Notation "p '==G>' q" := (strongerThanB p q) (at level 90).
+Definition strongerThanG (p q: assertionG) : Prop :=
+  forall s: state, s_impG p q s.
+Notation "p '==G>' q" := (strongerThanG p q) (at level 90).
 
 
 
