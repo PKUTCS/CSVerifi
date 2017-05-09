@@ -6,6 +6,8 @@ make:
 	coqc assertionV.v
 	coqc assertionB.v
 	coqc assertionG.v
+	coqc triple.v
+	coqc CSSsVerification.v
 
 
 

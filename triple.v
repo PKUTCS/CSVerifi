@@ -22,6 +22,7 @@ Definition assn_sub (X: id) (a: aexp) P : assertionG :=
   end.
 Notation "P [ X \ a ]" := (assn_sub X a P) (at level 10).
 
+
 Definition bassn b : assertionG :=
   fun st => 
   match st with 
@@ -149,8 +150,30 @@ Inductive triple: assertionG -> command -> assertionG -> Prop :=
              (CFcreate x bkli)
              ([[P & (point_toF x (bkli_to_fe (reverse bkli)))]])
 
-| rule_FcontentAppend : 
-.
+| rule_FcontentAppend : forall fid bkli P ffe,
+      triple ([[P & point_toF fid ffe]])
+             (CFcontentAppend fid bkli)
+             ([[P & point_toF fid (Appfe ffe (bkli_to_fe (reverse bkli))) ]])
+
+| rule_Fdelete : forall fid ffe P,
+      triple ([[ P & point_toF fid ffe ]])
+             (CFdelete fid)
+             ([[ P & empB]])
+
+| rule_Blookup : forall x tv bk bk1 P,
+      triple ([[ P & (BKId x =b= tv) /@\ (point_toB bk bk1) ]])
+             (CBlookup x bk)
+             ([[ P & (BKId x =b= bk1) /@\ (point_toB bk bk1) ]])
+
+| rule_Bmutate : forall bk1 bk2 P t,
+      triple ([[ P &  point_toB bk1 t ]])
+             (CBmutat bk1 bk2)
+             ([[ P & point_toB bk1 bk2 ]])
+
+| rule_Bdelete : forall bk t P,
+      triple ([[ P & point_toB bk t ]])
+             (CBdelete bk)
+             ([[ P & empB ]]).
 
 Notation "{{ P }} c {{ Q }}" :=
   (triple P c Q) (at level 90, c at next level).
@@ -159,218 +182,3 @@ Notation "{{ P }} c {{ Q }}" :=
 
 
 
-
-
-
-
-
-
-
-
-
-(*
-Definition triple (P:assertionG) (c:command) (Q:assertionG) : Prop :=
-  forall st opst, 
-    P st ->
-    c / st \\ opst ->
-    match opst with
-    | Abt => False
-    | St st2 => Q st2
-    end.
-
-
-
-
-
-(* proof rules *)
-(* assign *)
-Theorem rule_asgn : forall Q X a,
-  {{Q [X \ a]}} (CAss X a) {{Q}}.
-Proof.
-  intros.
-  unfold triple.
-  intros. unfold assn_sub in *.
-  destruct st. repeat destruct p. destruct opst.
-  -inversion H0. subst. assumption.
-  -inversion H0.
-Qed.
-
-
-
-(* consquence *)
-Theorem rule_consequence_pre : forall (P P' Q : assertionG) c,
-  {{P'}} c {{Q}} ->
-  P ==G> P' ->
-  {{P}} c {{Q}}.
-Proof.
-  intros.
-  unfold triple in *.
-  unfold strongerThanG in *.
-  intros.
-  apply H0 in H1.
-  apply H in H2.
-  -apply H2. -apply H1.
-Qed.
-
-
-Theorem rule_consequence_post : forall (P Q Q' : assertionG) c,
-  {{P}} c {{Q'}} ->
-  Q' ==G> Q ->
-  {{P}} c {{Q}}.
-Proof.
-  unfold triple in *.
-  unfold strongerThanG in *.
-  intros. unfold s_impG in *.
-  assert (c / st \\ opst /\ P st). -auto.
-  -apply H with (opst:=opst) in H1.
-   +destruct opst. 
-    *apply H0. assumption.
-    *inversion H1.
-   +apply H2.
-Qed.
-
-
-Theorem rule_consequence : forall (P P' Q Q' : assertionG) c,
-  {{P'}} c {{Q'}} ->
-  P ==G> P' ->
-  Q' ==G> Q ->
-  {{P}} c {{Q}}.
-Proof.
-  intros.
-  apply rule_consequence_pre with P'.
-  -apply rule_consequence_post with Q'.
-   +assumption.
-   +assumption.
-  -assumption.
-Qed.
-
-
-
-
-(* skip rule *)
-Theorem rule_skip : forall P,
-     {{P}} CSkip {{P}}.
-Proof.
-  unfold triple. intros.
-  inversion H0. subst. assumption.
-Qed.
-
-
-
-
-
-(* Sequencing *)
-Theorem rule_seq : forall P Q R c1 c2,
-     {{Q}} c2 {{R}} ->
-     {{P}} c1 {{Q}} ->
-     {{P}} (CSeq c1 c2) {{R}}.
-Proof.
-  unfold triple.
-  intros.
-  inversion H2. subst.
-  apply H0 in H5. apply H in H8.
-  -assumption. -assumption. -assumption. 
-  -subst. apply H0 in H7.
-   +inversion H7. +apply H1.
-Qed.
-
-
-
-
-
-(* Conditionals *)
-(*
-      {{P ∧  b}} c1 {{Q}}
-      {{P ∧ ~b}} c2 {{Q}}
-------------------------------------
-{{P}} IFB b THEN c1 ELSE c2 FI {{Q}}
-*)
-Definition bassn b : assertionG :=
-  fun st => 
-  match st with 
-  | (stoV,stoB,stoF,hV,hB) => 
-      (beval stoV stoB stoF b = Some true)
-  end.
-
-Definition not_bassn b : assertionG :=
-  fun st => 
-  match st with 
-  | (stoV,stoB,stoF,hV,hB) => 
-      (beval stoV stoB stoF b = Some false)
-  end.
-
-
-Definition bassn_Abt b : assertionG :=
-  fun st => 
-  match st with 
-  | (stoV,stoB,stoF,hV,hB) => 
-      (beval stoV stoB stoF b = None)
-  end.
-
-
-Lemma bexp_eval_true : forall b stoV stoB stoF hV hB,
-  beval stoV stoB stoF b = Some true -> 
-  (bassn b) (stoV,stoB,stoF,hV,hB).
-Proof.
-  intros.
-  unfold bassn. assumption.
-Qed.
-
-Lemma bexp_eval_false : forall b stoV stoB stoF hV hB,
-  beval stoV stoB stoF b = Some false -> 
-  not ((bassn b) (stoV,stoB,stoF,hV,hB)).
-Proof.
-  unfold bassn, not.
-  intros. rewrite H in H0. inversion H0.
-Qed.
-
-
-(* if rule is not soundness: bexp can abort! *)
-Theorem rule_if : forall (P Q:assertionG) b c1 c2,
-  (forall st, P st -> not ((bassn_Abt b) st)) ->
-  {{fun st:state => P st /\ bassn b st}} c1 {{Q}} ->
-  {{fun st:state => P st /\ not_bassn b st}} c2 {{Q}} ->
-  {{P}} (CIf b c1 c2) {{Q}}.
-Proof.
-  unfold triple, bassn, not.
-  intros. inversion H3. subst.
-  -apply H0 in H10. assumption.
-   +split. ++apply H2. ++apply H9.
-  -subst. apply H1 in H10.
-   +apply H10. 
-   +split.
-    ++apply H2.
-    ++intros. simpl in *. assumption.
-  -subst. apply H in H2.
-    +inversion H2.
-    +unfold bassn_Abt. assumption.
-Qed.
-
-
-(* loops *)
-Theorem rule_while : forall (P:assertionG) b c,
-  (forall st, P st -> not ((bassn_Abt b) st)) ->
-  {{fun st => P st /\ bassn b st}} c {{P}} ->
-  {{P}} (CWhile b c) {{fun st => P st /\ not (bassn b st)}}.
-Proof.
-  intros P b c Hhoare st st' He HP.
-  remember (CWhile b c) as wcom eqn:Heqwcom.
-  induction He;
-    try (inversion Heqwcom); subst.
-  - (* E_WhileEnd *)
-    split. 
-    +apply Hhoare in HP. unfold triple in *.
-     inversion H0. subst.
-     *
-     unfold bassn_Abt in *.
-  - (* E_WhileLoop *)
-    apply IHHe2. reflexivity. unfold triple in *.
-    apply (Hhoare (sto, h) (St st)). assumption.
-    split. assumption. apply bexp_eval_true. assumption.
-  - unfold triple in *.
-    apply (Hhoare (sto, h) Abt).
-    +assumption. +split. *assumption.
-     *apply bexp_eval_true. simpl. assumption.
-Qed.
-
-*)
