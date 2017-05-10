@@ -18,6 +18,12 @@ Definition empV : assertionV :=
                   | (stoV,stoB,stoF,hV,hB) => hV = emp_heapV
                   end.
 
+Definition trueV : assertionV :=
+  fun st:state => True.
+
+
+Definition falseV : assertionV :=
+  fun st:state => False.
 
 Definition point_toV (e1 e2:aexp) : assertionV :=
   fun st:state =>
@@ -27,6 +33,23 @@ Definition point_toV (e1 e2:aexp) : assertionV :=
   end.
 
 Notation "e1 '|->' e2" := (point_toV e1 e2) (at level 60).
+
+
+Definition notV (p:assertionV) : assertionV :=
+  fun st:state => not (p st).
+
+Definition eqV (a1 a2: aexp) : assertionV :=
+  fun st:state =>
+  match st with
+  | (stoV,stoB,stoF,hV,hB) => (aeval stoV stoF a1) = (aeval stoV stoF a2)
+  end.
+
+Definition leV (a1 a2: aexp) : assertionV :=
+  fun st:state =>
+  match st with
+  | (stoV,stoB,stoF,hV,hB) => (aeval stoV stoF a1) <= (aeval stoV stoF a2)
+  end.
+
 
 
 Definition sep_conjV (p q : assertionV) : assertionV :=

@@ -14,7 +14,7 @@ Import ListNotations.
 
 
 
-Definition assn_sub (X: id) (a: aexp) P : assertionG :=
+Definition assn_sub (X: id) (a: aexp) P : assertionV :=
   fun st => 
   match st with
   | (stoV,stoB,stoF,hV,hB) => 
@@ -76,8 +76,10 @@ end.
 
 
 Inductive triple: assertionG -> command -> assertionG -> Prop :=
-| rule_asgn : forall Q X a,
-                triple (Q [X \ a]) (CAss X a) Q
+| rule_asgn : forall P Q X a,
+                triple ([[ P [X \ a] & Q]]) 
+                       (CAss X a)
+                       ([[P & Q]])
 | rule_consequence_pre: forall (P P' Q : assertionG) c,
                           triple P' c Q ->
                           (*P ==> P' ->*)
@@ -173,7 +175,15 @@ Inductive triple: assertionG -> command -> assertionG -> Prop :=
 | rule_Bdelete : forall bk t P,
       triple ([[ P & point_toB bk t ]])
              (CBdelete bk)
-             ([[ P & empB ]]).
+             ([[ P & empB ]])
+
+| rule_frameV : forall P1 P2 P Q1 Q2 c,
+      triple ([[P1 & Q1]]) c ([[P2 & Q2]]) -> 
+      triple ([[P1**P & Q1]]) c ([[P2**P & Q2]])
+
+| rule_frameB : forall P1 P2 Q1 Q2 Q c,
+      triple ([[P1 & Q1]]) c ([[P2 & Q2]]) -> 
+      triple ([[P1 & Q1**Q]]) c ([[P2 & Q2**Q]]).
 
 Notation "{{ P }} c {{ Q }}" :=
   (triple P c Q) (at level 90, c at next level).

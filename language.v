@@ -61,20 +61,6 @@ Notation "'IFB' c1 'THEN' c2 'ELSE' c3 'FI'" :=
   (CIf c1 c2 c3) (at level 80, right associativity).
 
 
-Definition W : id := Id "W".
-Definition X : id := Id "X".
-Definition Y : id := Id "Y".
-Definition M : id := Id "M".
-Definition Z : id := Id "Z".
-Definition N : id := Id "N".
-Definition Fa : id := Id "Fa".
-Definition Fb : id := Id "Fb".
-Definition Fc : id := Id "Fc".
-Definition Ba : id := Id "Ba".
-Definition Bb : id := Id "Bb".
-Definition Bc : id := Id "Bc".
-Definition Bd : id := Id "Bd".
-Definition Be : id := Id "Be".
 
 
 
