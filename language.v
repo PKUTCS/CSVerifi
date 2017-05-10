@@ -51,6 +51,16 @@ Inductive command: Type :=
 | CBdelete: bkexp -> command.
 
 
+Notation " 'SKIP' " := CSkip.
+Notation "x '::=' a" := (CAss x a) (at level 60).
+Notation "c1 ;; c2" :=
+  (CSeq c1 c2) (at level 80, right associativity).
+Notation "'WHILE' b 'DO' c 'END'" :=
+  (CWhile b c) (at level 80, right associativity).
+Notation "'IFB' c1 'THEN' c2 'ELSE' c3 'FI'" :=
+  (CIf c1 c2 c3) (at level 80, right associativity).
+
+
 Definition W : id := Id "W".
 Definition X : id := Id "X".
 Definition Y : id := Id "Y".
