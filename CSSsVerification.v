@@ -3,6 +3,7 @@ Require Export Coq.Bool.Bool.
 Require Export Coq.Arith.Arith.
 Require Export Coq.Arith.EqNat.
 Require Export Coq.Lists.List.
+Require Export Coq.Logic.FunctionalExtensionality.
 Import ListNotations.
 
 (* export all bindings *)

@@ -152,10 +152,15 @@ Inductive triple: assertionG -> command -> assertionG -> Prop :=
              (CFcreate x bkli)
              ([[P & (point_toF x (bkli_to_fe (reverse bkli)))]])
 
-| rule_FcontentAppend : forall fid bkli P ffe,
+| rule_FcontentAppendFe : forall fid bkli P ffe,
       triple ([[P & point_toF fid ffe]])
              (CFcontentAppend fid bkli)
              ([[P & point_toF fid (Appfe ffe (bkli_to_fe (reverse bkli))) ]])
+
+| rule_FcontentAppendBk : forall fid bk P ffe,
+      triple ([[P & point_toF fid ffe]])
+             (CFcontentAppend fid [bk])
+             ([[P & point_toF fid (Appbk ffe bk) ]])
 
 | rule_Fdelete : forall fid ffe P,
       triple ([[ P & point_toF fid ffe ]])
@@ -183,7 +188,7 @@ Inductive triple: assertionG -> command -> assertionG -> Prop :=
 
 | rule_frameB : forall P1 P2 Q1 Q2 Q c,
       triple ([[P1 & Q1]]) c ([[P2 & Q2]]) -> 
-      triple ([[P1 & Q1**Q]]) c ([[P2 & Q2**Q]]).
+      triple ([[P1 & Q1@@Q]]) c ([[P2 & Q2@@Q]]).
 
 Notation "{{ P }} c {{ Q }}" :=
   (triple P c Q) (at level 90, c at next level).

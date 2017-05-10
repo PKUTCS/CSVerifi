@@ -4,6 +4,7 @@ Require Import Coq.Bool.Bool.
 Require Import Coq.Arith.Arith.
 Require Import Coq.Arith.EqNat.
 Require Import Coq.Lists.List.
+Require Import Coq.Logic.FunctionalExtensionality.
 Require Import language.
 Require Import semantic.
 Require Import state.
@@ -88,7 +89,5 @@ Notation "p '-->' q" := (s_impV p q) (at level 85).
 Definition strongerThanV (p q: assertionV) : Prop :=
   forall s: state, s_impV p q s.
 Notation "p '==>' q" := (strongerThanV p q) (at level 90).
-
-
 
 

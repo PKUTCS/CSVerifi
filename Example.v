@@ -42,7 +42,13 @@ Proof.
             (eqV (AFsize f6) (APlus (AMinus (AFsize f1) (AId i)) (ANum 1)))
           & point_toF f1 (Appfe (Fi f5) (Fi f6)) @@ 
             point_toF f2 (Appfe (Fi f4) (Fi f5)) ]]).
-  -eapply rule_consequence_post.
+  -apply rule_consequence_post with
+        (Q':= (fun st => (([[ (eqV (AFsize f5) (AMinus (AId i) (ANum 1))) //\\ 
+                            (eqV (AFsize f6) (APlus (AMinus (AFsize f1) (AId i)) (ANum 1)))
+                          & point_toF f1 (Appfe (Fi f5) (Fi f6)) @@ 
+                            point_toF f2 (Appfe (Fi f4) (Fi f5)) ]]) st)
+                         /\ not (bassn (BLe (AId i) (AFsize f1)) st))).
+   eapply rule_consequence_pre.
    apply rule_while.
    apply rule_seq with
       (Q:= [[ (leV (AId i) (AFsize f1)) //\\ 
@@ -57,14 +63,32 @@ Proof.
               & point_toF f1 (Appfe (Fi f5) (Fi f6)) @@ 
                 point_toF f2 (Appfe (Fi f4) (Fi f5)) ]]).
     *eapply rule_consequence_pre.
-     ++apply rule_asgn.
+     apply rule_asgn.
     *eapply rule_consequence_pre.
-     ++apply rule_FcontentAppend.
-   +eapply rule_consequence.
-    *apply rule_Blookup.
-  -eapply rule_consequence_pre.
-    *apply rule_asgn.
-
+     apply rule_consequence_post with
+        (Q':= [[  (leV (AId i) (AFsize f1)) //\\ 
+                  (eqV (AFsize f5) (AMinus (AId i) (ANum 1))) //\\ 
+                  (eqV (AFsize f7) (AMinus (AFsize f1) (AId i)))
+               &  point_toF f2 (Appbk (Appfe (Fi f4) (Fi f5)) (BKId bc))
+              ]]).
+     apply rule_FcontentAppendBk.
+   +apply rule_consequence_post with
+        (Q':= [[  (leV (AId i) (AFsize f1)) //\\ 
+                  (eqV (AFsize f5) (AMinus (AId i) (ANum 1))) //\\ 
+                  (eqV (AFsize f7) (AMinus (AFsize f1) (AId i)))
+               &  (BKId bc =b= (BKId bk)) /@\ 
+                  (point_toB (BKAddr f1 (AId i)) (BKId bk))
+              ]]).
+    eapply rule_consequence_pre.
+    apply rule_Blookup.
+  -apply rule_consequence_post with
+        (Q':= [[  (leV (AId i) (APlus (AFsize f1) (ANum 1))) //\\ 
+                  (eqV (AFsize f5) (AMinus (AId i) (ANum 1))) //\\ 
+                  (eqV (AFsize f6) (APlus (AMinus (AFsize f1) (AId i)) (ANum 1)))
+              & point_toF f1 (Appfe (Fi f5) (Fi f6)) @@ 
+                point_toF f2 (Appfe (Fi f4) (Fi f5)) ]]).
+   eapply rule_consequence_pre.
+   apply rule_asgn.
 
 
 
