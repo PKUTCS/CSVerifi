@@ -7,7 +7,7 @@ Import ListNotations.
 
 Inductive aexp: Type :=
 | ANum : nat -> aexp
-| AId : id -> aexp
+| AId : id -> aexp    (* Var *)
 | APlus : aexp -> aexp -> aexp
 | AMult : aexp -> aexp -> aexp
 | AMinus : aexp -> aexp -> aexp
@@ -16,7 +16,7 @@ Inductive aexp: Type :=
 
 Inductive bkexp: Type :=
 | BKNum : nat -> bkexp
-| BKId  : id -> bkexp
+| BKId  : id -> bkexp     (* BKVar *)
 | BKAddr: id -> aexp -> bkexp.
 
 Inductive bexp: Type :=
