@@ -23,6 +23,24 @@ Definition assn_sub (X: id) (a: aexp) P : assertionV :=
 Notation "P [ X \ a ]" := (assn_sub X a P) (at level 10).
 
 
+Fixpoint bk_sub (x:id) (e:bkexp) bke : bkexp :=
+  match bke with
+  | BKNum n => bke
+  | BKId i => if (beq_id i x) then e else bke (* case: (BKId x) = bke *)
+  | BKAddr f a => bke
+  end.
+
+
+Fixpoint not_appear (f:id) (bkli: list bkexp) : Prop :=
+match bkli with
+| [] => True
+| bk::li => (match bk with
+             | BKNum n => (not_appear f li)
+             | BKId x => (not_appear f li)
+             | BKAddr ff a => if (beq_id ff f) then False else (not_appear f li)
+             end)
+end.
+
 Definition bassn b : assertionG :=
   fun st => 
   match st with 
@@ -148,16 +166,19 @@ Inductive triple: assertionG -> command -> assertionG -> Prop :=
                P
 
 | rule_Fcreate : forall x bkli P,
+      not_appear x bkli ->
       triple ([[P & empB]])
              (CFcreate x bkli)
              ([[P & (point_toF x (bkli_to_fe (reverse bkli)))]])
 
 | rule_FcontentAppendFe : forall fid bkli P ffe,
+      not_appear fid bkli ->
       triple ([[P & point_toF fid ffe]])
              (CFcontentAppend fid bkli)
              ([[P & point_toF fid (Appfe ffe (bkli_to_fe (reverse bkli))) ]])
 
 | rule_FcontentAppendBk : forall fid bk P ffe,
+      not_appear fid [bk] ->
       triple ([[P & point_toF fid ffe]])
              (CFcontentAppend fid [bk])
              ([[P & point_toF fid (Appbk ffe bk) ]])
@@ -170,7 +191,7 @@ Inductive triple: assertionG -> command -> assertionG -> Prop :=
 | rule_Blookup : forall x tv bk bk1 P,
       triple ([[ P & (BKId x =b= tv) /@\ (point_toB bk bk1) ]])
              (CBlookup x bk)
-             ([[ P & (BKId x =b= bk1) /@\ (point_toB bk bk1) ]])
+             ([[ P & (BKId x =b= bk1) /@\ (point_toB bk (bk_sub x tv bk1)) ]])
 
 | rule_Bmutate : forall bk1 bk2 P t,
       triple ([[ P &  point_toB bk1 t ]])

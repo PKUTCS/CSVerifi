@@ -11,10 +11,25 @@ Definition beq_id id1 id2 :=
 Theorem beq_id_true_iff :
   forall x y : id,
   beq_id x y = true <-> x = y.
-Admitted.
+Proof.
+  intros. split.
+  -intros. unfold beq_id in *. destruct x. destruct y.
+   destruct (string_dec s s0). +subst. auto. +inversion H.
+  -intros. unfold beq_id. destruct x. destruct y.
+   destruct (string_dec s s0). +auto. +inversion H. subst.
+   destruct n. auto.
+Qed.
+
 
 Theorem false_beq_id :
   forall x y : id,
   x <> y <-> beq_id x y = false.
-Admitted.
+Proof.
+  intros. split; unfold beq_id in *.
+  -intros. destruct x. destruct y. destruct (string_dec s s0).
+   +subst. destruct H. auto. +auto.
+  -intros. destruct x. destruct y. destruct (string_dec s s0).
+   +inversion H. +clear H. unfold not in *. intros. inversion H.
+    contradiction.
+Qed.
 

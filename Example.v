@@ -12,6 +12,7 @@ Definition f6 : id := Id "f6".
 Definition f7 : id := Id "f7".
 Definition bc : id := Id "bc".
 Definition bk : id := Id "bk".
+Definition tv : id := Id "tv".
 
 
 Definition Append :=
@@ -72,12 +73,13 @@ Proof.
                &  point_toF f2 (Appbk (Appfe (Fi f4) (Fi f5)) (BKId bc))
               ]]).
      apply rule_FcontentAppendBk.
+     ++unfold not_appear. auto.
    +apply rule_consequence_post with
         (Q':= [[  (leV (AId i) (AFsize f1)) //\\ 
                   (eqV (AFsize f5) (AMinus (AId i) (ANum 1))) //\\ 
                   (eqV (AFsize f7) (AMinus (AFsize f1) (AId i)))
                &  (BKId bc =b= (BKId bk)) /@\ 
-                  (point_toB (BKAddr f1 (AId i)) (BKId bk))
+                  (point_toB (BKAddr f1 (AId i)) (bk_sub bc (BKId tv) (BKId bk)))
               ]]).
     eapply rule_consequence_pre.
     apply rule_Blookup.
@@ -89,7 +91,7 @@ Proof.
                 point_toF f2 (Appfe (Fi f4) (Fi f5)) ]]).
    eapply rule_consequence_pre.
    apply rule_asgn.
-
+Qed.
 
 
 
